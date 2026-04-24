@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1">
+  <!-- Blade -->
+  <path d="M4 16 L20 16 L18 20 L6 20 Z" />
+  <!-- Stem -->
+  <rect x="11" y="10" width="2" height="6" />
+  <!-- Handle -->
+  <rect x="8" y="7" width="8" height="3" rx="1" />
+</svg>
