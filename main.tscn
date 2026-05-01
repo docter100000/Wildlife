@@ -6,6 +6,8 @@
 [ext_resource type="Shader" path="res://terrain.gdshader" id="4_shader"]
 [ext_resource type="Script" path="res://systems/land_manager.gd" id="5_script"]
 [ext_resource type="Script" path="res://systems/block_spawner.gd" id="6_script"]
+[ext_resource type="Script" path="res://ui/tile_input_handler.gd" id="7_script"]
+[ext_resource type="Script" path="res://systems/tile_grid.gd" id="8_script"]
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 
 [sub_resource type="Sky" id="Sky_env"]
@@ -38,8 +40,12 @@ subdivide_depth = 100
 
 [node name="Main" type="Node3D"]
 
-[node name="LandManager" type="Node" parent="."]
+[node name="LandManager" type="Node" parent="." node_paths=PackedStringArray("tile_grid")]
 script = ExtResource("5_script")
+tile_grid = NodePath("TileGrid")
+
+[node name="TileGrid" type="Node" parent="LandManager"]
+script = ExtResource("8_script")
 
 [node name="BlockSpawner" type="Node" parent="." node_paths=PackedStringArray("land_manager", "spawn_root")]
 script = ExtResource("6_script")
@@ -68,7 +74,10 @@ script = ExtResource("2_script")
 size = Vector3(1.5, 10, 1.5)
 texture_albedo = SubResource("GradientTexture2D_ring")
 
-[node name="Camera3D" type="Camera3D" parent="CameraPivot"]
+[node name="Camera3D" type="Camera3D" parent="CameraPivot" node_paths=PackedStringArray("camera", "tile_grid")]
+script = ExtResource("7_script")
+camera = NodePath(".")
+tile_grid = NodePath("../../LandManager/TileGrid")
 
 [node name="UI" type="CanvasLayer" parent="."]
 script = ExtResource("3_script")

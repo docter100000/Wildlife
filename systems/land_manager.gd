@@ -1,6 +1,8 @@
 class_name LandManager
 extends Node
 
+@export var tile_grid: TileGrid
+
 signal animal_state_changed(instance: AnimalInstance, old_state, new_state)
 
 var _instances: Array[AnimalInstance] = []
@@ -22,6 +24,7 @@ func _on_species_unlocked(data: SpeciesData) -> void:
 	_instances.append(AnimalInstance.new(data))
 
 func _on_day_passed() -> void:
+	tile_grid.decay_disturbance()
 	var ctx := _build_context()
 	print("--- Day passed! Evaluating Land Context ---")
 	for inst in _instances:
@@ -68,14 +71,7 @@ func _build_context() -> LandContext:
 			ctx.flora_maturity[id] = maxf(ctx.flora_maturity.get(id, 0.0), m)
 
 	# ── Worm density: average across all tilled tiles ───────────────
-	var total_worms := 0.0
-	var tile_count  := 0
-	for pos in _soil_tiles:
-		var s: SoilTile = _soil_tiles[pos]
-		if s.is_tilled:
-			total_worms += s.worm_density
-			tile_count  += 1
-	ctx.worm_density = (total_worms / maxf(tile_count, 1)) * 100.0 + _debug_worm_density
+	ctx.worm_density = _calc_worm_density() + _debug_worm_density
 
 	# ── Nesting sites: count flora that provide nesting ──────────────
 	for pos in _flora_instances:
@@ -110,9 +106,24 @@ func _build_context() -> LandContext:
 	return ctx
 
 # Stubs — replace with real tile/grid queries
-func _calc_disturbance()  -> float:  return 0.0
-func _calc_land_area()    -> float:  return 1.0
-func _is_night()          -> bool:   return false
+func _calc_worm_density() -> float:
+	var total := 0.0
+	var count := 0
+	for pos in _soil_tiles:
+		var s: SoilTile = _soil_tiles[pos]
+		if s.is_tilled:
+			total += s.worm_density
+			count += 1
+	return total / maxf(count, 1) * 30.0  # scale to worms/m² range
+
+func _calc_disturbance() -> float:
+	return tile_grid.get_average_disturbance()
+
+func _calc_land_area() -> float:
+	return tile_grid.get_land_area_ha()
+
+func _is_night() -> bool:
+	return TimeSystem.is_night  # wired in Phase 10
 
 var _debug_worm_density: float = 0.0
 
@@ -172,6 +183,11 @@ func _on_season_passed(season: int, rainfall: float) -> void:
 	# Rebuild LandContext flora_maturity after all growth applied
 	_refresh_context_flora()
 
+func get_or_create_soil(pos: Vector2i) -> SoilTile:
+	if not _soil_tiles.has(pos):
+		_soil_tiles[pos] = SoilTile.new(pos)
+	return _soil_tiles[pos]
+
 func plant_flora(flora_id: StringName, pos: Vector2i) -> bool:
 	var fdata = get_node("/root/SpeciesRegistry").get_flora(flora_id)
 	if not fdata or not get_node("/root/TierManager").is_flora_unlocked(fdata):
@@ -180,8 +196,7 @@ func plant_flora(flora_id: StringName, pos: Vector2i) -> bool:
 		return false  # tile already occupied
 	var inst := FloraInstance.new(fdata, pos)
 	_flora_instances[pos] = inst
-	if not _soil_tiles.has(pos):
-		_soil_tiles[pos] = SoilTile.new(pos)
+	get_or_create_soil(pos)
 		
 	var bs = get_parent().get_node_or_null("BlockSpawner")
 	if bs and bs.has_method("spawn_flora_block"):
