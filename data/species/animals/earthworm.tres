@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="SpeciesData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/species/species_data.gd" id="1_abcde"]
+
+[resource]
+script = ExtResource("1_abcde")
+id = &"earthworm"
+display_name = "Earthworm"
+category = 2
+tier = 1
+rarity = 0
+block_color = Color(0.8, 0.4, 0.4, 1)
+visit_flora_required = Array[StringName]([])
+visit_flora_thresholds = Array[float]([])
+visit_min_worm_density = 0.0
+visit_min_prey_count = 0
+visit_requires_night = false
+visit_disturbance_max = 1.0
+visits_needed_for_residency = 1
+reside_flora_required = Array[StringName]([])
+reside_flora_thresholds = Array[float]([])
+reside_needs_nesting_site = false
+reside_min_territory_ha = 0.0
+reside_rival_excludes = Array[StringName]([])
+unlock_level = 1
+browse_stress = 0.0
+trample_stress = 0.0

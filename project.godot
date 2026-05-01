@@ -18,6 +18,9 @@ config/icon="res://icon.svg"
 [autoload]
 
 SaveManager="*res://save_manager.gd"
+SpeciesRegistry="*res://autoloads/species_registry.gd"
+TierManager="*res://autoloads/tier_manager.gd"
+TimeSystem="*res://systems/time_system.gd"
 
 [physics]
 

@@ -179,31 +179,38 @@ func smoothstep(edge0: float, edge1: float, x: float) -> float:
 	var t = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0)
 	return t * t * (3.0 - 2.0 * t)
 
-func save_to_disk() -> void:
+func get_vertices() -> PackedVector3Array:
 	if _array_mesh:
 		var arrays = _array_mesh.surface_get_arrays(0)
-		var vertices = arrays[Mesh.ARRAY_VERTEX]
-		SaveManager.save_terrain(vertices)
+		return arrays[Mesh.ARRAY_VERTEX]
+	return PackedVector3Array()
+
+func apply_vertices(saved_vertices: PackedVector3Array) -> void:
+	if _array_mesh and saved_vertices.size() > 0:
+		var arrays = _array_mesh.surface_get_arrays(0)
+		if arrays[Mesh.ARRAY_VERTEX].size() == saved_vertices.size():
+			arrays[Mesh.ARRAY_VERTEX] = saved_vertices
+			
+			_array_mesh.clear_surfaces()
+			_array_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+			
+			var st = SurfaceTool.new()
+			st.create_from(_array_mesh, 0)
+			st.generate_normals()
+			
+			_array_mesh.clear_surfaces()
+			_array_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, st.commit_to_arrays())
+			
+			if _terrain_material:
+				_array_mesh.surface_set_material(0, _terrain_material)
+			
+			_update_collision()
+
+func save_to_disk() -> void:
+	var verts = get_vertices()
+	SaveManager.save_game(verts, [])
 
 func load_from_disk() -> void:
-	if _array_mesh:
-		var saved_vertices = SaveManager.load_terrain()
-		if saved_vertices.size() > 0:
-			var arrays = _array_mesh.surface_get_arrays(0)
-			if arrays[Mesh.ARRAY_VERTEX].size() == saved_vertices.size():
-				arrays[Mesh.ARRAY_VERTEX] = saved_vertices
-				
-				_array_mesh.clear_surfaces()
-				_array_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-				
-				var st = SurfaceTool.new()
-				st.create_from(_array_mesh, 0)
-				st.generate_normals()
-				
-				_array_mesh.clear_surfaces()
-				_array_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, st.commit_to_arrays())
-				
-				if _terrain_material:
-					_array_mesh.surface_set_material(0, _terrain_material)
-				
-				_update_collision()
+	var data = SaveManager.load_game()
+	if data.has("terrain"):
+		apply_vertices(data["terrain"])

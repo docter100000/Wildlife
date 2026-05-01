@@ -9,6 +9,10 @@ extends CanvasLayer
 @onready var radius_slider: HSlider = $MarginContainer/VBoxContainer/SettingsPanel/MarginContainer/VBoxContainer/RadiusBox/RadiusSlider
 @onready var strength_slider: HSlider = $MarginContainer/VBoxContainer/SettingsPanel/MarginContainer/VBoxContainer/StrengthBox/StrengthSlider
 
+@onready var add_xp_button: Button = $TestPanel/VBoxContainer/AddXPButton
+@onready var next_day_button: Button = $TestPanel/VBoxContainer/NextDayButton
+@onready var plant_flora_button: Button = $TestPanel/VBoxContainer/PlantFloraButton
+
 func _ready() -> void:
 	# Populate the dropdown menu
 	tool_selector.add_item("None")
@@ -39,6 +43,11 @@ func _ready() -> void:
 	var popup = system_menu.get_popup()
 	popup.id_pressed.connect(_on_system_menu_id_pressed)
 		
+	# Test Buttons
+	add_xp_button.pressed.connect(_on_add_xp_pressed)
+	next_day_button.pressed.connect(_on_next_day_pressed)
+	plant_flora_button.pressed.connect(_on_plant_flora_pressed)
+		
 	# Initialize state to "None"
 	_on_tool_selected(0)
 
@@ -47,17 +56,17 @@ func _on_tool_selected(index: int) -> void:
 		# "None" tool
 		settings_panel.hide()
 		if terrain: 
-			terrain.active_tool_mode = 0 # NONE
+			terrain.active_tool_mode = TerrainDeformer.ToolMode.NONE
 	elif index == 1:
 		# Spade Tool
 		settings_panel.show()
 		if terrain: 
-			terrain.active_tool_mode = 1 # DIG_RAISE
+			terrain.active_tool_mode = TerrainDeformer.ToolMode.DIG_RAISE
 	elif index == 2:
 		# Smooth Tool
 		settings_panel.show()
 		if terrain:
-			terrain.active_tool_mode = 2 # SMOOTH
+			terrain.active_tool_mode = TerrainDeformer.ToolMode.SMOOTH
 
 func _on_radius_changed(value: float) -> void:
 	if terrain: 
@@ -74,3 +83,14 @@ func _on_system_menu_id_pressed(id: int) -> void:
 		if terrain: terrain.load_from_disk()
 	elif id == 2:
 		get_tree().change_scene_to_file("res://main_menu.tscn")
+
+func _on_add_xp_pressed() -> void:
+	get_node("/root/TierManager").add_xp(750)
+
+func _on_next_day_pressed() -> void:
+	get_node("/root/TimeSystem").advance_day()
+
+func _on_plant_flora_pressed() -> void:
+	var lm = $"../LandManager"
+	if lm:
+		lm.debug_plant_flora()

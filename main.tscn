@@ -3,6 +3,9 @@
 [ext_resource type="Script" path="res://terrain_deformer.gd" id="1_script"]
 [ext_resource type="Script" path="res://camera_controller.gd" id="2_script"]
 [ext_resource type="Script" path="res://ui_controller.gd" id="3_script"]
+[ext_resource type="Shader" path="res://terrain.gdshader" id="4_shader"]
+[ext_resource type="Script" path="res://systems/land_manager.gd" id="5_script"]
+[ext_resource type="Script" path="res://systems/block_spawner.gd" id="6_script"]
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 
 [sub_resource type="Sky" id="Sky_env"]
@@ -13,8 +16,9 @@ background_mode = 2
 sky = SubResource("Sky_env")
 tonemap_mode = 2
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mat"]
-albedo_color = Color(0.4, 0.75, 0.3, 1)
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_mat"]
+render_priority = 0
+shader = ExtResource("4_shader")
 
 [sub_resource type="Gradient" id="Gradient_ring"]
 offsets = PackedFloat32Array(0, 0.8, 0.85, 0.9, 1)
@@ -27,12 +31,22 @@ fill_from = Vector2(0.5, 0.5)
 fill_to = Vector2(1, 0.5)
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_terrain"]
-material = SubResource("StandardMaterial3D_mat")
+material = SubResource("ShaderMaterial_mat")
 size = Vector2(50, 50)
 subdivide_width = 100
 subdivide_depth = 100
 
 [node name="Main" type="Node3D"]
+
+[node name="LandManager" type="Node" parent="."]
+script = ExtResource("5_script")
+
+[node name="BlockSpawner" type="Node" parent="." node_paths=PackedStringArray("land_manager", "spawn_root")]
+script = ExtResource("6_script")
+land_manager = NodePath("../LandManager")
+spawn_root = NodePath("SpawnRoot")
+
+[node name="SpawnRoot" type="Node3D" parent="BlockSpawner"]
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_env")
@@ -136,3 +150,36 @@ popup/item_1/text = "Load Game"
 popup/item_1/id = 1
 popup/item_2/text = "Exit to Main Menu"
 popup/item_2/id = 2
+
+[node name="TestPanel" type="PanelContainer" parent="UI"]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -220.0
+offset_top = -120.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 0
+grow_vertical = 0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/TestPanel"]
+layout_mode = 2
+
+[node name="DebugLabel" type="Label" parent="UI/TestPanel/VBoxContainer"]
+layout_mode = 2
+text = "Simulation Ready"
+
+[node name="AddXPButton" type="Button" parent="UI/TestPanel/VBoxContainer"]
+layout_mode = 2
+text = "Add XP +750"
+
+[node name="NextDayButton" type="Button" parent="UI/TestPanel/VBoxContainer"]
+layout_mode = 2
+text = "Next Day"
+
+[node name="PlantFloraButton" type="Button" parent="UI/TestPanel/VBoxContainer"]
+layout_mode = 2
+text = "Plant Hawthorn & Bramble"
+

@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="SpeciesData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/species/species_data.gd" id="1_abcde"]
+
+[resource]
+script = ExtResource("1_abcde")
+id = &"robin"
+display_name = "Robin"
+category = 4
+tier = 2
+rarity = 0
+block_color = Color(0.909804, 0.364706, 0.141176, 1)
+visit_flora_required = Array[StringName]([&"hawthorn", &"bramble"])
+visit_flora_thresholds = Array[float]([0.1, 0.2])
+visit_min_worm_density = 12.0
+visit_min_prey_count = 0
+visit_requires_night = false
+visit_disturbance_max = 0.2
+visits_needed_for_residency = 5
+reside_flora_required = Array[StringName]([&"hawthorn"])
+reside_flora_thresholds = Array[float]([0.3])
+reside_needs_nesting_site = true
+reside_min_territory_ha = 0.5
+reside_rival_excludes = Array[StringName]([])
+unlock_level = 4
+browse_stress = 0.0
+trample_stress = 0.0
