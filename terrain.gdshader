@@ -6,6 +6,9 @@ uniform vec3 grass_color_2 : source_color = vec3(0.25, 0.55, 0.15);
 uniform vec3 dirt_color_1 : source_color = vec3(0.4, 0.28, 0.15);
 uniform vec3 dirt_color_2 : source_color = vec3(0.28, 0.18, 0.1);
 
+uniform vec3 water_color : source_color = vec3(0.1, 0.4, 0.8);
+uniform float water_height = -0.35;
+
 uniform float transition_height = -0.1;
 uniform float transition_smoothness = 0.15;
 
@@ -74,8 +77,18 @@ void fragment() {
 		local_y
 	);
 	
-	ALBEDO = mix(dirt, grass, t);
+	vec3 dirt_grass = mix(dirt, grass, t);
 	
-	// Dirt is rougher, grass has slight specularity
-	ROUGHNESS = mix(0.95, 0.8, t);
+	// Blend between dirt_grass and water based on height
+	float w = smoothstep(
+		water_height - transition_smoothness + transition_noise,
+		water_height + transition_smoothness + transition_noise,
+		local_y
+	);
+	
+	ALBEDO = mix(water_color, dirt_grass, w);
+	
+	// Dirt is rougher, grass has slight specularity, water is highly reflective
+	float rough_dirt_grass = mix(0.95, 0.8, t);
+	ROUGHNESS = mix(0.15, rough_dirt_grass, w);
 }

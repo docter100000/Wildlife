@@ -2,8 +2,10 @@ class_name LandManager
 extends Node
 
 @export var tile_grid: TileGrid
+@export var block_spawner: BlockSpawner
 
 signal animal_state_changed(instance: AnimalInstance, old_state, new_state)
+signal invasive_detected(positions: Array)
 
 var _instances: Array[AnimalInstance] = []
 
@@ -15,10 +17,12 @@ var _soil_tiles: Dictionary = {}
 var _cached_flora_maturity: Dictionary = {}
 
 func _ready() -> void:
-	get_node("/root/TierManager").connect("species_unlocked", _on_species_unlocked)
-	get_node("/root/TimeSystem").connect("day_passed", _on_day_passed)
-	if get_node("/root/TimeSystem").has_signal("season_passed"):
-		get_node("/root/TimeSystem").connect("season_passed", _on_season_passed)
+	TierManager.connect("species_unlocked", _on_species_unlocked)
+	TimeSystem.connect("day_passed",    _on_day_passed)
+	TimeSystem.connect("season_passed", _on_season_passed)
+	# Seed all currently-unlocked species on startup
+	for s in SpeciesRegistry.all_unlocked_species(TierManager.player_level):
+		_instances.append(AnimalInstance.new(s))
 
 func _on_species_unlocked(data: SpeciesData) -> void:
 	_instances.append(AnimalInstance.new(data))
@@ -26,19 +30,11 @@ func _on_species_unlocked(data: SpeciesData) -> void:
 func _on_day_passed() -> void:
 	tile_grid.decay_disturbance()
 	var ctx := _build_context()
-	print("--- Day passed! Evaluating Land Context ---")
 	for inst in _instances:
 		var prev := inst.state
 		AnimalStateMachine.tick(inst, ctx)
 		if inst.state != prev:
-			var state_names = {
-				SpeciesData.State.ABSENT: "ABSENT",
-				SpeciesData.State.VISITING: "VISITING",
-				SpeciesData.State.RESIDENT: "RESIDENT"
-			}
-			print("> [", inst.data.display_name, "] changed state: ", state_names[prev], " -> ", state_names[inst.state])
 			animal_state_changed.emit(inst, prev, inst.state)
-	_debug_print_states()
 
 func _debug_print_states() -> void:
 	var state_names := ["ABSENT", "VISITING", "RESIDENT"]
@@ -69,6 +65,16 @@ func _build_context() -> LandContext:
 		if m > 0.0:
 			var id := inst.data.id
 			ctx.flora_maturity[id] = maxf(ctx.flora_maturity.get(id, 0.0), m)
+
+	for pos in _flora_instances:
+		var inst: FloraInstance = _flora_instances[pos]
+		if not inst.data.is_invasive: continue
+		# Build pressure map: invasive presence pressures neighbour tiles
+		var pressure := inst.maturity * 0.8
+		ctx.invasive_pressure[pos] = pressure
+		for n in tile_grid.neighbours(pos, 2):
+			ctx.invasive_pressure[n] = maxf(
+				ctx.invasive_pressure.get(n, 0.0), pressure * 0.5)
 
 	# ── Worm density: average across all tilled tiles ───────────────
 	ctx.worm_density = _calc_worm_density() + _debug_worm_density
@@ -180,6 +186,12 @@ func _on_season_passed(season: int, rainfall: float) -> void:
 		# 6. Notify block spawner to update visual scale
 		_update_flora_visual(inst)
 
+	var new_infections := InvasiveSpreadSystem.tick(
+		_flora_instances, _soil_tiles, tile_grid, self)
+	if not new_infections.is_empty():
+		# Signal UI to show invasive alert — wire to your HUD in Phase 12
+		emit_signal("invasive_detected", new_infections)
+
 	# Rebuild LandContext flora_maturity after all growth applied
 	_refresh_context_flora()
 
@@ -187,6 +199,9 @@ func get_or_create_soil(pos: Vector2i) -> SoilTile:
 	if not _soil_tiles.has(pos):
 		_soil_tiles[pos] = SoilTile.new(pos)
 	return _soil_tiles[pos]
+
+func get_soil(pos: Vector2i) -> SoilTile:
+	return _soil_tiles.get(pos, null)
 
 func plant_flora(flora_id: StringName, pos: Vector2i) -> bool:
 	var fdata = get_node("/root/SpeciesRegistry").get_flora(flora_id)
@@ -198,10 +213,31 @@ func plant_flora(flora_id: StringName, pos: Vector2i) -> bool:
 	_flora_instances[pos] = inst
 	get_or_create_soil(pos)
 		
-	var bs = get_parent().get_node_or_null("BlockSpawner")
-	if bs and bs.has_method("spawn_flora_block"):
-		inst.block_node = bs.spawn_flora_block(fdata, _tile_to_world(pos))
+	if block_spawner:
+		inst.block_node = block_spawner.spawn_flora_block(fdata, _tile_to_world(pos))
 	return true
+
+# Called by InvasiveSpreadSystem to spawn a block without going
+# through plant_flora() (which checks unlock level)
+func _spawn_flora_block_at(
+	data: FloraData, world_pos: Vector3
+) -> MeshInstance3D:
+	return block_spawner.spawn_flora_block(data, world_pos)
+
+# Expose for ToolSystem
+func remove_flora_at(pos: Vector2i) -> void:
+	_remove_flora(pos)
+	# Clear any lingering invasive pressure at this position
+	if tile_grid:
+		tile_grid._disturbance[pos] = minf(
+			tile_grid._disturbance.get(pos, 0.0) + 0.4, 1.0)
+
+# Called by BlockSpawner after spawning — links block back to instance
+func register_flora_block(
+	pos: Vector2i, node: MeshInstance3D
+) -> void:
+	var inst: FloraInstance = _flora_instances.get(pos)
+	if inst: inst.block_node = node
 
 func _update_spacing_scores() -> void:
 	for pos in _soil_tiles:
@@ -243,6 +279,5 @@ func _refresh_context_flora() -> void:
 				 inst.get_maturity_for_context())
 
 func _update_flora_visual(inst: FloraInstance) -> void:
-	var bs = get_parent().get_node_or_null("BlockSpawner")
-	if bs and bs.has_method("update_flora_scale"):
-		bs.update_flora_scale(inst)
+	if block_spawner:
+		block_spawner.update_flora_scale(inst)

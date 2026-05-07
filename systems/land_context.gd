@@ -31,11 +31,17 @@ func rival_present(rival_id: StringName) -> bool:
 
 # ── Stubs for Phase 8 (Tile Grid) ───────────────────────────────────
 
-func invasive_pressure_at(_pos: Vector2i) -> float:
-	return 0.0
+# Maps tile position → invasive pressure 0–1
+var invasive_pressure: Dictionary = {}
+# Sets of tile positions with active disease
+var fungal_tiles:      Array[Vector2i] = []
+var viral_tiles:       Array[Vector2i] = []
 
-func fungal_infection_at(_pos: Vector2i) -> bool:
-	return false
+func invasive_pressure_at(pos: Vector2i) -> float:
+	return invasive_pressure.get(pos, 0.0)
 
-func viral_infection_at(_pos: Vector2i) -> bool:
-	return false
+func fungal_infection_at(pos: Vector2i) -> bool:
+	return pos in fungal_tiles
+
+func viral_infection_at(pos: Vector2i) -> bool:
+	return pos in viral_tiles

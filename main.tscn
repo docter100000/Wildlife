@@ -1,13 +1,15 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://cx5bjlqexsvjh"]
 
-[ext_resource type="Script" path="res://terrain_deformer.gd" id="1_script"]
-[ext_resource type="Script" path="res://camera_controller.gd" id="2_script"]
-[ext_resource type="Script" path="res://ui_controller.gd" id="3_script"]
-[ext_resource type="Shader" path="res://terrain.gdshader" id="4_shader"]
-[ext_resource type="Script" path="res://systems/land_manager.gd" id="5_script"]
-[ext_resource type="Script" path="res://systems/block_spawner.gd" id="6_script"]
-[ext_resource type="Script" path="res://ui/tile_input_handler.gd" id="7_script"]
-[ext_resource type="Script" path="res://systems/tile_grid.gd" id="8_script"]
+[ext_resource type="Script" uid="uid://dpppqt1qycbwy" path="res://terrain_deformer.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://dqe47gg70kjkx" path="res://camera_controller.gd" id="2_script"]
+[ext_resource type="Script" uid="uid://c1ca7oqygn4dh" path="res://ui_controller.gd" id="3_script"]
+[ext_resource type="Shader" uid="uid://baqbmptfb0421" path="res://terrain.gdshader" id="4_shader"]
+[ext_resource type="Script" uid="uid://layf3maffq2l" path="res://systems/land_manager.gd" id="5_script"]
+[ext_resource type="Script" uid="uid://beb60lfjyl4ve" path="res://systems/block_spawner.gd" id="6_script"]
+[ext_resource type="Script" uid="uid://c4b54p0axnctg" path="res://ui/tile_input_handler.gd" id="7_script"]
+[ext_resource type="Script" uid="uid://p3i8033td6jf" path="res://systems/tile_grid.gd" id="8_script"]
+[ext_resource type="Script" uid="uid://chmqm2qqutr50" path="res://ui/debug_overlay.gd" id="9_kek77"]
+
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 
 [sub_resource type="Sky" id="Sky_env"]
@@ -21,6 +23,19 @@ tonemap_mode = 2
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_mat"]
 render_priority = 0
 shader = ExtResource("4_shader")
+shader_parameter/grass_color_1 = Color(0.35, 0.65, 0.25, 1)
+shader_parameter/grass_color_2 = Color(0.25, 0.55, 0.15, 1)
+shader_parameter/dirt_color_1 = Color(0.4, 0.28, 0.15, 1)
+shader_parameter/dirt_color_2 = Color(0.28, 0.18, 0.1, 1)
+shader_parameter/transition_height = -0.1
+shader_parameter/transition_smoothness = 0.15
+shader_parameter/noise_scale = 1.5
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_terrain"]
+material = SubResource("ShaderMaterial_mat")
+size = Vector2(50, 50)
+subdivide_width = 100
+subdivide_depth = 100
 
 [sub_resource type="Gradient" id="Gradient_ring"]
 offsets = PackedFloat32Array(0, 0.8, 0.85, 0.9, 1)
@@ -32,98 +47,96 @@ fill = 1
 fill_from = Vector2(0.5, 0.5)
 fill_to = Vector2(1, 0.5)
 
-[sub_resource type="PlaneMesh" id="PlaneMesh_terrain"]
-material = SubResource("ShaderMaterial_mat")
-size = Vector2(50, 50)
-subdivide_width = 100
-subdivide_depth = 100
+[node name="Main" type="Node3D" unique_id=1179221761]
 
-[node name="Main" type="Node3D"]
-
-[node name="LandManager" type="Node" parent="." node_paths=PackedStringArray("tile_grid")]
+[node name="LandManager" type="Node" parent="." unique_id=812018934 node_paths=PackedStringArray("tile_grid", "block_spawner")]
 script = ExtResource("5_script")
 tile_grid = NodePath("TileGrid")
+block_spawner = NodePath("../BlockSpawner")
 
 [node name="TileGrid" type="Node" parent="LandManager"]
 script = ExtResource("8_script")
+grid_width = 50
+grid_height = 50
 
-[node name="BlockSpawner" type="Node" parent="." node_paths=PackedStringArray("land_manager", "spawn_root")]
+[node name="BlockSpawner" type="Node" parent="." unique_id=44552222 node_paths=PackedStringArray("land_manager", "spawn_root")]
 script = ExtResource("6_script")
 land_manager = NodePath("../LandManager")
 spawn_root = NodePath("SpawnRoot")
 
-[node name="SpawnRoot" type="Node3D" parent="BlockSpawner"]
+[node name="SpawnRoot" type="Node3D" parent="BlockSpawner" unique_id=2047129636]
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=830722243]
 environment = SubResource("Environment_env")
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=956980928]
 transform = Transform3D(0.866025, -0.25, 0.433013, 0, 0.866025, 0.5, -0.5, -0.433013, 0.75, 0, 10, 0)
 shadow_enabled = true
 
 [node name="Terrain" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 25, 0, 25)
 mesh = SubResource("PlaneMesh_terrain")
 script = ExtResource("1_script")
 brush_radius = 2.0
-brush_strength = 0.5
 
 [node name="CameraPivot" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 25, 0, 25)
 script = ExtResource("2_script")
 
-[node name="CursorDecal" type="Decal" parent="CameraPivot"]
+[node name="CursorDecal" type="Decal" parent="CameraPivot" unique_id=1827887847]
 size = Vector3(1.5, 10, 1.5)
 texture_albedo = SubResource("GradientTexture2D_ring")
 
-[node name="Camera3D" type="Camera3D" parent="CameraPivot" node_paths=PackedStringArray("camera", "tile_grid")]
+[node name="Camera3D" type="Camera3D" parent="CameraPivot" unique_id=1165546048 node_paths=PackedStringArray("camera", "tile_grid")]
 script = ExtResource("7_script")
 camera = NodePath(".")
 tile_grid = NodePath("../../LandManager/TileGrid")
 
-[node name="UI" type="CanvasLayer" parent="."]
+[node name="UI" type="CanvasLayer" parent="." unique_id=2117176139]
 script = ExtResource("3_script")
 
-[node name="MarginContainer" type="MarginContainer" parent="UI"]
+[node name="MarginContainer" type="MarginContainer" parent="UI" unique_id=1516498715]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 theme_override_constants/margin_left = 20
 theme_override_constants/margin_top = 20
-mouse_filter = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="UI/MarginContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/MarginContainer" unique_id=519728408]
 layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 0
 theme_override_constants/separation = 10
 
-[node name="ToolSelector" type="OptionButton" parent="UI/MarginContainer/VBoxContainer"]
+[node name="ToolSelector" type="OptionButton" parent="UI/MarginContainer/VBoxContainer" unique_id=1347727626]
 layout_mode = 2
 focus_mode = 0
 
-[node name="SettingsPanel" type="PanelContainer" parent="UI/MarginContainer/VBoxContainer"]
+[node name="SettingsPanel" type="PanelContainer" parent="UI/MarginContainer/VBoxContainer" unique_id=489648067]
 layout_mode = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="UI/MarginContainer/VBoxContainer/SettingsPanel"]
+[node name="MarginContainer" type="MarginContainer" parent="UI/MarginContainer/VBoxContainer/SettingsPanel" unique_id=2028829137]
 layout_mode = 2
 theme_override_constants/margin_left = 10
 theme_override_constants/margin_top = 10
 theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 10
 
-[node name="VBoxContainer" type="VBoxContainer" parent="UI/MarginContainer/VBoxContainer/SettingsPanel/MarginContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/MarginContainer/VBoxContainer/SettingsPanel/MarginContainer" unique_id=1554226255]
 layout_mode = 2
 theme_override_constants/separation = 5
 
-[node name="RadiusBox" type="VBoxContainer" parent="UI/MarginContainer/VBoxContainer/SettingsPanel/MarginContainer/VBoxContainer"]
+[node name="RadiusBox" type="VBoxContainer" parent="UI/MarginContainer/VBoxContainer/SettingsPanel/MarginContainer/VBoxContainer" unique_id=179136500]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="UI/MarginContainer/VBoxContainer/SettingsPanel/MarginContainer/VBoxContainer/RadiusBox"]
+[node name="Label" type="Label" parent="UI/MarginContainer/VBoxContainer/SettingsPanel/MarginContainer/VBoxContainer/RadiusBox" unique_id=1586164364]
 layout_mode = 2
 text = "Brush Size"
 
-[node name="RadiusSlider" type="HSlider" parent="UI/MarginContainer/VBoxContainer/SettingsPanel/MarginContainer/VBoxContainer/RadiusBox"]
+[node name="RadiusSlider" type="HSlider" parent="UI/MarginContainer/VBoxContainer/SettingsPanel/MarginContainer/VBoxContainer/RadiusBox" unique_id=547383711]
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 min_value = 0.5
@@ -131,14 +144,14 @@ max_value = 10.0
 step = 0.5
 value = 2.0
 
-[node name="StrengthBox" type="VBoxContainer" parent="UI/MarginContainer/VBoxContainer/SettingsPanel/MarginContainer/VBoxContainer"]
+[node name="StrengthBox" type="VBoxContainer" parent="UI/MarginContainer/VBoxContainer/SettingsPanel/MarginContainer/VBoxContainer" unique_id=793923319]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="UI/MarginContainer/VBoxContainer/SettingsPanel/MarginContainer/VBoxContainer/StrengthBox"]
+[node name="Label" type="Label" parent="UI/MarginContainer/VBoxContainer/SettingsPanel/MarginContainer/VBoxContainer/StrengthBox" unique_id=607086446]
 layout_mode = 2
 text = "Deform Strength"
 
-[node name="StrengthSlider" type="HSlider" parent="UI/MarginContainer/VBoxContainer/SettingsPanel/MarginContainer/VBoxContainer/StrengthBox"]
+[node name="StrengthSlider" type="HSlider" parent="UI/MarginContainer/VBoxContainer/SettingsPanel/MarginContainer/VBoxContainer/StrengthBox" unique_id=892318831]
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 min_value = 0.1
@@ -146,7 +159,7 @@ max_value = 5.0
 step = 0.1
 value = 0.5
 
-[node name="SystemMenu" type="MenuButton" parent="UI/MarginContainer"]
+[node name="SystemMenu" type="MenuButton" parent="UI/MarginContainer" unique_id=271431826]
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 0
@@ -160,7 +173,7 @@ popup/item_1/id = 1
 popup/item_2/text = "Exit to Main Menu"
 popup/item_2/id = 2
 
-[node name="TestPanel" type="PanelContainer" parent="UI"]
+[node name="TestPanel" type="PanelContainer" parent="UI" unique_id=2146404038]
 anchors_preset = 3
 anchor_left = 1.0
 anchor_top = 1.0
@@ -173,22 +186,28 @@ offset_bottom = -20.0
 grow_horizontal = 0
 grow_vertical = 0
 
-[node name="VBoxContainer" type="VBoxContainer" parent="UI/TestPanel"]
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/TestPanel" unique_id=737701140]
 layout_mode = 2
 
-[node name="DebugLabel" type="Label" parent="UI/TestPanel/VBoxContainer"]
+[node name="DebugLabel" type="Label" parent="UI/TestPanel/VBoxContainer" unique_id=1901670418]
 layout_mode = 2
 text = "Simulation Ready"
 
-[node name="AddXPButton" type="Button" parent="UI/TestPanel/VBoxContainer"]
+[node name="AddXPButton" type="Button" parent="UI/TestPanel/VBoxContainer" unique_id=1943644264]
 layout_mode = 2
 text = "Add XP +750"
 
-[node name="NextDayButton" type="Button" parent="UI/TestPanel/VBoxContainer"]
+[node name="NextDayButton" type="Button" parent="UI/TestPanel/VBoxContainer" unique_id=1979879571]
 layout_mode = 2
 text = "Next Day"
 
-[node name="PlantFloraButton" type="Button" parent="UI/TestPanel/VBoxContainer"]
+[node name="PlantFloraButton" type="Button" parent="UI/TestPanel/VBoxContainer" unique_id=579308254]
 layout_mode = 2
 text = "Plant Hawthorn & Bramble"
 
+[node name="DebugOverlay" type="RichTextLabel" parent="UI" unique_id=1884303376 node_paths=PackedStringArray("land_manager")]
+offset_right = 908.0
+offset_bottom = 514.0
+bbcode_enabled = true
+script = ExtResource("9_kek77")
+land_manager = NodePath("../../LandManager")

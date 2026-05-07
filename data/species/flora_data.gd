@@ -21,3 +21,11 @@ extends Resource
 
 # Which other flora IDs are needed nearby to grow here
 @export var needs_companion_flora: Array[StringName] = []
+
+# ── Invasive behaviour (leave at defaults for normal plants) ─────────
+@export var is_invasive: bool         = false
+@export var spread_radius: int        = 2     # tiles per season
+@export var spread_chance: float      = 0.35  # per eligible neighbour
+@export var spread_min_maturity: float= 0.6   # must be this mature to spread
+@export var soil_poison_radius: int   = 0     # tiles of soil damage around it
+@export var soil_poison_strength: float= 0.0  # microbiome reduction per season

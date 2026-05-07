@@ -152,28 +152,75 @@ func deform_terrain(global_hit_position: Vector3, raise: bool, delta: float) -> 
 			
 	if modified:
 		arrays[Mesh.ARRAY_VERTEX] = vertices
-		
-		# First update the mesh with the new vertices
-		_array_mesh.clear_surfaces()
-		_array_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-		
-		# Now use SurfaceTool to recalculate normals based on the new vertices
-		var st = SurfaceTool.new()
-		st.create_from(_array_mesh, 0)
-		st.generate_normals()
-		
-		# Commit the normals back to the mesh
-		_array_mesh.clear_surfaces()
-		_array_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, st.commit_to_arrays())
-		
-		# Re-apply the saved material so it doesn't disappear!
-		if _terrain_material:
-			_array_mesh.surface_set_material(0, _terrain_material)
-		
-		# Note: Updating the collision shape every frame is performance-intensive 
-		# for large meshes. In a full game, you might want to chunk the terrain or 
-		# update collisions slightly less frequently than the visual mesh.
-		_update_collision()
+		_apply_updated_arrays(arrays)
+
+func _apply_updated_arrays(arrays: Array) -> void:
+	_array_mesh.clear_surfaces()
+	_array_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	
+	var st = SurfaceTool.new()
+	st.create_from(_array_mesh, 0)
+	st.generate_normals()
+	
+	_array_mesh.clear_surfaces()
+	_array_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, st.commit_to_arrays())
+	
+	if _terrain_material:
+		_array_mesh.surface_set_material(0, _terrain_material)
+	
+	_update_collision()
+
+func till_tile(world_pos: Vector3, tile_size: float) -> void:
+	var local_hit = to_local(world_pos)
+	
+	var arrays = _array_mesh.surface_get_arrays(0)
+	var vertices = arrays[Mesh.ARRAY_VERTEX]
+	
+	var modified = false
+	var radius = tile_size * 0.6 
+	var target_depth = -0.25
+	
+	for i in range(vertices.size()):
+		var v = vertices[i]
+		var dist = Vector2(v.x, v.z).distance_to(Vector2(local_hit.x, local_hit.z))
+		if dist < radius:
+			var inner_radius = radius * 0.4
+			var falloff = 1.0
+			if dist > inner_radius:
+				falloff = smoothstep(radius, inner_radius, dist)
+				
+			vertices[i].y = lerp(v.y, target_depth, falloff)
+			modified = true
+			
+	if modified:
+		arrays[Mesh.ARRAY_VERTEX] = vertices
+		_apply_updated_arrays(arrays)
+
+func dig_pond_tile(world_pos: Vector3, tile_size: float) -> void:
+	var local_hit = to_local(world_pos)
+	
+	var arrays = _array_mesh.surface_get_arrays(0)
+	var vertices = arrays[Mesh.ARRAY_VERTEX]
+	
+	var modified = false
+	var radius = tile_size * 0.8
+	var target_depth = -0.5
+	
+	for i in range(vertices.size()):
+		var v = vertices[i]
+		var dist = Vector2(v.x, v.z).distance_to(Vector2(local_hit.x, local_hit.z))
+		if dist < radius:
+			var inner_radius = radius * 0.5
+			var falloff = 1.0
+			if dist > inner_radius:
+				falloff = smoothstep(radius, inner_radius, dist)
+				
+			vertices[i].y = lerp(v.y, target_depth, falloff)
+			modified = true
+			
+	if modified:
+		arrays[Mesh.ARRAY_VERTEX] = vertices
+		_apply_updated_arrays(arrays)
 
 func smoothstep(edge0: float, edge1: float, x: float) -> float:
 	var t = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0)
@@ -190,21 +237,7 @@ func apply_vertices(saved_vertices: PackedVector3Array) -> void:
 		var arrays = _array_mesh.surface_get_arrays(0)
 		if arrays[Mesh.ARRAY_VERTEX].size() == saved_vertices.size():
 			arrays[Mesh.ARRAY_VERTEX] = saved_vertices
-			
-			_array_mesh.clear_surfaces()
-			_array_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-			
-			var st = SurfaceTool.new()
-			st.create_from(_array_mesh, 0)
-			st.generate_normals()
-			
-			_array_mesh.clear_surfaces()
-			_array_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, st.commit_to_arrays())
-			
-			if _terrain_material:
-				_array_mesh.surface_set_material(0, _terrain_material)
-			
-			_update_collision()
+			_apply_updated_arrays(arrays)
 
 func save_to_disk() -> void:
 	var verts = get_vertices()
