@@ -9,21 +9,15 @@ extends CanvasLayer
 @onready var radius_slider: HSlider = $MarginContainer/VBoxContainer/SettingsPanel/MarginContainer/VBoxContainer/RadiusBox/RadiusSlider
 @onready var strength_slider: HSlider = $MarginContainer/VBoxContainer/SettingsPanel/MarginContainer/VBoxContainer/StrengthBox/StrengthSlider
 
+@onready var add_xp_button: Button = $TestPanel/VBoxContainer/AddXPButton
+@onready var next_day_button: Button = $TestPanel/VBoxContainer/NextDayButton
+@onready var plant_flora_button: Button = $TestPanel/VBoxContainer/PlantFloraButton
+
 func _ready() -> void:
-	# Populate the dropdown menu
-	tool_selector.add_item("None")
-	
-	var spade_icon = load("res://spade_icon.svg")
-	if spade_icon:
-		tool_selector.add_icon_item(spade_icon, "Spade Tool")
-	else:
-		tool_selector.add_item("Spade Tool")
-		
-	var flathead_icon = load("res://flathead_icon.svg")
-	if flathead_icon:
-		tool_selector.add_icon_item(flathead_icon, "Smooth Tool")
-	else:
-		tool_selector.add_item("Smooth Tool")
+	# Populate the dropdown menu with the new ToolSystem enum
+	tool_selector.clear()
+	for tool_key in ToolSystem.Tool.keys():
+		tool_selector.add_item(tool_key.capitalize())
 	
 	# Connect signals for dynamic updates
 	tool_selector.item_selected.connect(_on_tool_selected)
@@ -39,25 +33,27 @@ func _ready() -> void:
 	var popup = system_menu.get_popup()
 	popup.id_pressed.connect(_on_system_menu_id_pressed)
 		
-	# Initialize state to "None"
+	# Test Buttons
+	add_xp_button.pressed.connect(_on_add_xp_pressed)
+	next_day_button.pressed.connect(_on_next_day_pressed)
+	plant_flora_button.pressed.connect(_on_plant_flora_pressed)
+		
+	# Initialize state
 	_on_tool_selected(0)
 
 func _on_tool_selected(index: int) -> void:
-	if index == 0:
-		# "None" tool
-		settings_panel.hide()
-		if terrain: 
-			terrain.active_tool_mode = 0 # NONE
-	elif index == 1:
-		# Spade Tool
-		settings_panel.show()
-		if terrain: 
-			terrain.active_tool_mode = 1 # DIG_RAISE
-	elif index == 2:
-		# Smooth Tool
-		settings_panel.show()
-		if terrain:
-			terrain.active_tool_mode = 2 # SMOOTH
+	# Hide the old terrain settings panel and disable mesh deformation
+	settings_panel.hide()
+	if terrain: 
+		terrain.active_tool_mode = TerrainDeformer.ToolMode.NONE
+		
+	# Update the new ToolSystem
+	var active_tool := index as ToolSystem.Tool
+	ToolSystem.active_tool = active_tool
+	
+	# Default to bramble for testing when plant tool is selected
+	if active_tool == ToolSystem.Tool.PLANT:
+		ToolSystem.selected_flora_id = &"bramble"
 
 func _on_radius_changed(value: float) -> void:
 	if terrain: 
@@ -74,3 +70,14 @@ func _on_system_menu_id_pressed(id: int) -> void:
 		if terrain: terrain.load_from_disk()
 	elif id == 2:
 		get_tree().change_scene_to_file("res://main_menu.tscn")
+
+func _on_add_xp_pressed() -> void:
+	get_node("/root/TierManager").add_xp(750)
+
+func _on_next_day_pressed() -> void:
+	get_node("/root/TimeSystem")._advance_day()
+
+func _on_plant_flora_pressed() -> void:
+	var lm = $"../LandManager"
+	if lm:
+		lm.debug_plant_flora()

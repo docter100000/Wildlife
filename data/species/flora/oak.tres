@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="FloraData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/species/flora_data.gd" id="1_abcde"]
+
+[resource]
+script = ExtResource("1_abcde")
+id = &"oak"
+display_name = "Oak Tree"
+tier = 3
+block_color = Color(0.2, 0.6, 0.2, 1)
+unlock_level = 5
+preferred_light = 1.0
+preferred_moisture = 0.5
+light_tolerance = 0.3
+moisture_tolerance = 0.3
+provides_nesting = true
+provides_canopy = true
+worm_density_bonus = 0.05
+maturity_seasons = 4
+needs_companion_flora = Array[StringName]([])

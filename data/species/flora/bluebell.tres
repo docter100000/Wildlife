@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="FloraData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/species/flora_data.gd" id="1_abcde"]
+
+[resource]
+script = ExtResource("1_abcde")
+id = &"bluebell"
+display_name = "Bluebell"
+tier = 2
+block_color = Color(0.2, 0.2, 0.8, 1)
+unlock_level = 3
+preferred_light = 0.3
+preferred_moisture = 0.6
+light_tolerance = 0.4
+moisture_tolerance = 0.2
+provides_nesting = false
+provides_canopy = false
+worm_density_bonus = 0.0
+maturity_seasons = 1
+needs_companion_flora = Array[StringName]([])
